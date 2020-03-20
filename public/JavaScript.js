@@ -91,17 +91,21 @@ var reset = function (name) {
     $('#playerTurn').empty();
     $('#playerTurn').html('<p>' + name + ' is the new King' + '</p>');
 };
+
 var mouse = {x: 0, y: 0};
 var last_mouse = {x: 0, y: 0};
-var pos = {x: 0, y: 0};
 
 // draw
 var draw = function (obj) {
+    context.fillStyle = obj.color;
     context.beginPath();
+    context.arc(obj.position.x, obj.position.y,
+        1, 0, 2 * Math.PI);
+    context.fill();
     context.moveTo(last_mouse.x, last_mouse.y);
     context.lineTo(mouse.x, mouse.y);
     context.strokeStyle = obj.color;
-    context.lineWidth = 5;
+    context.lineWidth = 3;
     context.stroke();
     context.closePath();
 };
@@ -130,22 +134,27 @@ var king = function () {
     });
     canvas.on('mousemove', function (event) {
         var offset = canvas.offset();
-
         last_mouse.x = mouse.x;
         last_mouse.y = mouse.y;
 
         mouse.x = event.pageX - offset.left;
         mouse.y = event.pageY - offset.top;
-        pos.x = event.clientX;
-        pos.y = event.clientY;
+
+        obj.last_position = {
+            x: mouse.x,
+            y: mouse.y,
+        };
 
         obj.position = {
             x: event.pageX - offset.left,
-            y: event.pageY - offset.top
+            y: event.pageY - offset.top,
         };
+
         if (drawing === true && click === true) {
             draw(obj);
             socket.emit('draw', obj);
+            console.log(obj);
+
         }
     });
 };
