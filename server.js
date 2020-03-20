@@ -8,160 +8,100 @@ app.use(express.static('public'));
 var server = http.Server(app);
 var io = socket_io(server);
 
-var users = [];
+var wordList = ["family", "cat", "dog", "Batman",
+    "woman", "bike", "flower", "croissant",
+    "fish", "smile", "feather", "cake"];
 
-var words = [
-    "word", "letter", "number", "person", "pen", "police", "people",
-    "sound", "water", "breakfast", "place", "man", "men", "woman", "women", "boy",
-    "girl", "serial killer", "Oregon Trail", "week", "month", "name", "sentence", "line", "air",
-    "land", "home", "hand", "house", "picture", "animal", "mother", "father",
-    "big foot", "sister", "world", "head", "page", "country", "question",
-    "shiba inu", "school", "plant", "food", "sun", "state", "eye", "city", "tree",
-    "farm", "story", "sea", "night", "day", "life", "north", "south", "east",
-    "west", "child", "children", "example", "paper", "music", "river", "car",
-    "Power Rangers", "feet", "book", "science", "room", "friend", "idea", "fish",
-    "mountain", "horse", "watch", "color", "face", "wood", "list", "bird",
-    "body", "fart", "family", "song", "door", "forest", "wind", "ship", "area",
-    "rock", "Captain Planet", "fire", "problem", "airplane", "top", "bottom", "king",
-    "space", "whale", "unicorn", "narwhal", "furniture", "sunset", "sunburn", "Grumpy cat", "feather", "pigeon"
-];
+/**
+ * @return {string}
+ */
+// returns random word for game
+function RandomWord() {
+    let wordIndex = Math.floor(Math.random() * (wordList.length));
+    return wordList[wordIndex];
+}
 
-function newWord() {
-	wordcount = Math.floor(Math.random() * (words.length));
-	return words[wordcount];
-};
-
-var wordcount;
+var playerList = [];
 
 io.on('connection', function (socket) {
-	io.emit('userlist', users);
+    io.emit('playerList', playerList);
 
-	socket.on('join', function(name) {
-		socket.username = name;
+    // player joins game
+    socket.on('join', function (player) {
+        socket.username = player;
+        socket.join(player);
+        playerList.push(player);
 
-		// user automatically joins a room under their own name
-		socket.join(name);
-		console.log(socket.username + ' has joined. ID: ' + socket.id);
+        // if player is first user or if king room has no user then create new king
+        if (playerList.length === 1 || typeof io.sockets.adapter.rooms['king'] === 'undefined') {
+            socket.join('king');
+            io.in(player).emit('king', player);
+            io.in(player).emit('work your magic', RandomWord());
 
-		// save the name of the user to an array called users
-		users.push(socket.username);
+            // else if king exists, everyone is pleb
+        } else {
+            socket.join('plebs');
+            io.in(player).emit('plebs', player);
+        }
+        // update playerList
+        io.emit('playerList', playerList);
+    });
 
-		// if the user is first to join OR 'drawer' room has no connections
-		if (users.length == 1 || typeof io.sockets.adapter.rooms['drawer'] === 'undefined') {
+    // player leaves game
+    socket.on('disconnect', function () {
+        for (var i = 0; i < playerList.length; i++) {
+            if (playerList[i] === socket.username) {
+                playerList.splice(i, 1);
+            }
+        }
+        io.emit('playerList', playerList);
 
-			// place user into 'drawer' room
-			socket.join('drawer');
+        // if disconnected player is king, reassign new king
+        if (typeof io.sockets.adapter.rooms['king'] === "undefined") {
+            var newKing = Math.floor(Math.random() * (playerList.length));
+            io.in(playerList[newKing]).emit('newKing', playerList[newKing]);
+        }
+    });
 
-			// server submits the 'drawer' event to this user
-			io.in(socket.username).emit('drawer', socket.username);
-			console.log(socket.username + ' is a drawer');
+    // reassign new king
+    socket.on('newKing', function (player) {
+        socket.leave('plebs');
+        socket.join('king');
+        socket.emit('king', player);
+        io.in('king').emit('work your magic', RandomWord());
+    });
 
-			// send the random word to the user inside the 'drawer' room
-			io.in(socket.username).emit('draw word', newWord());
-		//	console.log(socket.username + "'s draw word (join event): " + newWord());
-		} 
+    // king can swap role to pleb by double cliking on the pleb's name ( who will become new king )
+    socket.on('swapRole', function (data) {
+        socket.leave('king');
+        socket.join('plebs');
+        socket.emit('plebs', socket.username);
+        io.in(data.to).emit('king', data.to);
+        io.in(data.to).emit('work your magic', RandomWord());
+        io.emit('reset', data.to);
+    });
 
-		// if there are more than one names in users 
-		// or there is a person in drawer room..
-		else {
+    // draw
+    socket.on('draw', function (element) {
+        socket.broadcast.emit('draw', element);
+    });
 
-			// additional users will join the 'guesser' room
-			socket.join('guesser');
+    // player's guess
+    socket.on('playerTurn', function (data) {
+        io.emit('playerTurn', {username: data.username, playerTurn: data.playerTurn});
+    });
 
-			// server submits the 'guesser' event to this user
-			io.in(socket.username).emit('guesser', socket.username);
-			console.log(socket.username + ' is a guesser');
-		}
-	
-		// update all clients with the list of users
-		io.emit('userlist', users);
-		
-	});
+    // correct answer
+    socket.on('correctAnswer', function (data) {
+        io.emit('correctAnswer', data);
+    });
 
-	// submit drawing on canvas to other clients
-	socket.on('draw', function(obj) {
-		socket.broadcast.emit('draw', obj);
-	});
+    // clear screen
+    socket.on('clearScreen', function (player) {
+        io.emit('clearScreen', player);
+    });
+});
 
-	// submit each client's guesses to all clients
-	socket.on('guessword', function(data) {
-		io.emit('guessword', { username: data.username, guessword: data.guessword})
-		console.log('guessword event triggered on server from: ' + data.username + ' with word: ' + data.guessword);
-	});
-
-	socket.on('disconnect', function() {
-		for (var i = 0; i < users.length; i++) {
-
-			// remove user from users list
-			if (users[i] == socket.username) {
-				users.splice(i, 1);
-			};
-		};
-		console.log(socket.username + ' has disconnected.');
-
-		// submit updated users list to all clients
-		io.emit('userlist', users);
-
-		// if 'drawer' room has no connections..
-		if ( typeof io.sockets.adapter.rooms['drawer'] === "undefined") {
-			
-			// generate random number based on length of users list
-			var x = Math.floor(Math.random() * (users.length));
-			console.log(users[x]);
-
-			// submit new drawer event to the random user in userslist
-			io.in(users[x]).emit('new drawer', users[x]);
-		};
-	});
-
-	socket.on('new drawer', function(name) {
-
-		// remove user from 'guesser' room
-		socket.leave('guesser');
-
-		// place user into 'drawer' room
-		socket.join('drawer');
-		console.log('new drawer emit: ' + name);
-
-		// submit 'drawer' event to the same user
-		socket.emit('drawer', name);
-		
-		// send a random word to the user connected to 'drawer' room
-		io.in('drawer').emit('draw word', newWord());
-	
-	});
-
-	// initiated from drawer's 'dblclick' event in Player list
-	socket.on('swap rooms', function(data) {
-
-		// drawer leaves 'drawer' room and joins 'guesser' room
-		socket.leave('drawer');
-		socket.join('guesser');
-
-		// submit 'guesser' event to this user
-		socket.emit('guesser', socket.username);
-
-		// submit 'drawer' event to the name of user that was doubleclicked
-		io.in(data.to).emit('drawer', data.to);
-
-		// submit random word to new user drawer
-		io.in(data.to).emit('draw word', newWord());
-	
-		io.emit('reset', data.to);
-
-	});
-
-	socket.on('correct answer', function(data) {
-		io.emit('correct answer', data);
-		console.log(data.username + ' guessed correctly with ' + data.guessword);
-	});
-
-	socket.on('clear screen', function(name) {
-		io.emit('clear screen', name);
-	});
-
-})
-
-server.listen(process.env.PORT || 8080, function() {
-	console.log('Server started at http://localhost:8080');
+server.listen(process.env.PORT || 8080, function () {
+    console.log('Please navigate to http://localhost:8080');
 });

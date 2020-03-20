@@ -1,0 +1,43 @@
+<!doctype html>
+<title>Hangman</title>
+<meta charset="utf-8">
+<link href="StyleSheet.css" rel="stylesheet">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.dev.js"></script>
+<script src="JavaScript.js"></script>
+
+<div class="darken hidden">
+    <form class="player"><label for="username">Chose your name </label><input autofocus id="username" maxlength="14" placeholder="Player" type="text">
+        <button id="submitName" type="submit">Submit</button>
+        <button id="resetName" type="reset" value="Reset">Reset</button>
+    </form>
+</div>
+<div id="corp">
+    <h1>Hangman with extra steps</h1>
+    <div class="row">
+        <canvas id="canvas"></canvas>
+        <div class="players">
+            <ul></ul>
+        </div>
+        <div id="top-message">
+            <div class="draw hidden">
+                <p>The secret word is: <span class="word"></span></p>
+            </div>
+        </div>
+        <form class="hidden" id="guess">
+            Have a guess: <label>
+            <input class="guess-input" name="guess" type="text">
+        </label>
+        </form>
+        <div id="playerTurn"></div>
+        <div class="colors">
+            <button class="clear" type="button" value="0">Clear Page</button>
+            <button class="black" type="button" value="black">Black</button>
+            <button class="blue" type="button" value="blue">Blue</button>
+            <button class="yellow" type="button" value="yellow">Yellow</button>
+            <button class="red" type="button" value="red">Red</button>
+            <button class="green" type="button" value="green">Green</button>
+            <button class="white" type="button" value="white">Eraser</button>
+        </div>
+    </div>
+</div>
