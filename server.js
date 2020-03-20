@@ -71,7 +71,7 @@ io.on('connection', function (socket) {
         io.in('king').emit('work your magic', RandomWord());
     });
 
-    // king can swap role to pleb by double cliking on the pleb's name ( who will become new king )
+    // king can swap role to pleb by double clicking on the pleb's name ( who will become new king )
     socket.on('swapRole', function (data) {
         socket.leave('king');
         socket.join('plebs');
