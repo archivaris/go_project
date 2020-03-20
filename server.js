@@ -60,6 +60,7 @@ io.on('connection', function (socket) {
         if (typeof io.sockets.adapter.rooms['king'] === "undefined") {
             var newKing = Math.floor(Math.random() * (playerList.length));
             io.in(playerList[newKing]).emit('newKing', playerList[newKing]);
+            io.in(playerList[newKing]).emit('newKing', playerList[newKing]);
         }
     });
 
@@ -71,7 +72,7 @@ io.on('connection', function (socket) {
         io.in('king').emit('work your magic', RandomWord());
     });
 
-    // king can swap role to pleb by double clicking on the pleb's name ( who will become new king )
+    // king can swap role to pleb
     socket.on('swapRole', function (data) {
         socket.leave('king');
         socket.join('plebs');
@@ -91,14 +92,14 @@ io.on('connection', function (socket) {
         io.emit('playerTurn', {username: data.username, playerTurn: data.playerTurn});
     });
 
-    // correct answer
-    socket.on('correctAnswer', function (data) {
-        io.emit('correctAnswer', data);
-    });
-
     // clear screen
     socket.on('clearScreen', function (player) {
         io.emit('clearScreen', player);
+    });
+
+    // correct answer
+    socket.on('correctAnswer', function (data) {
+        io.emit('correctAnswer', data);
     });
 });
 
