@@ -1,5 +1,5 @@
 {
-  "name": "Hangman",
+  "name": "hangman",
   "version": "1.0.0",
   "description": "hangman game like",
   "main": "JavaScript.js",
