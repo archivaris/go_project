@@ -1,13 +1,19 @@
-!!!NOTA BENE:
+README:
+
+NOTA BENE:
 
     The project's server was NOT made in GOLANG, but in NODE-EXPRESS.
-    I just couldn't get around learning GOLAND, working from home and having a headache every single hour,
+    I just couldn't get around learning GOLANG, working from home and having a headache every single hour,
     so i took the occasion to try improve my JS skills ( for the 6 month project which i'll be doing in JS ).
     I'm prepared to assume the consequences of my choice.
     
-Project name: guesswhat AKA Hangman with extra steps
+Project name:
+        
+        guesswhat AKA Hangman with extra steps
 
-Team members: Ionut-Mihai BOSIICA ---- ionut-mihai.bosiica@epitech.eu
+Team members: 
+
+        Ionut-Mihai BOSIICA ---- ionut-mihai.bosiica@epitech.eu
 
 Technologies used:
 
@@ -16,6 +22,7 @@ Technologies used:
         Back: NODE-EXPRESS/SOCKET.IO
         
 RUN STEPS:
+
         sudo npm install
         
         npm start
